@@ -1,4 +1,3 @@
-import React from 'react';
 import ReactFlow from 'react-flow-renderer';
 
 const elements = [
@@ -26,10 +25,6 @@ const elements = [
   { id: 'e2-3', source: '2', target: '3' },
 ];
 
-const App = () => (
-  <div style={{ height: 300 }}>
-    <ReactFlow elements={elements} />
-  </div>
-);
+const App = () => <ReactFlow elements={elements} />;
 
 export default App;
