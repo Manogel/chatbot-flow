@@ -5,5 +5,7 @@ export type SideMessageControlsRef = {
 };
 
 export type SideMessageControlsProps = {
-  onAddNode: (node: MyMessageNode) => void;
+  onAddNode: (messageNode: MyMessageNode) => void;
+  onUpdate: (messageNode: MyMessageNode) => void;
+  onDelete: (messageId: string) => void;
 };

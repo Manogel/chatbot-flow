@@ -37,7 +37,7 @@ const INITIAL_FORM_DATA = {
 const SideMessageControls = forwardRef<
   SideMessageControlsRef,
   SideMessageControlsProps
->(({ onAddNode }, ref) => {
+>(({ onAddNode, onUpdate, onDelete }, ref) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [messageNodeEdit, setMessageNodeEdit] = useState<
     MyMessageNode | undefined
@@ -64,9 +64,34 @@ const SideMessageControls = forwardRef<
     [onOpen]
   );
 
-  const handleAddNode: FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSaveMessageNode: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
 
+    const submitFn = messageNodeEdit
+      ? handleUpdateMessageNode
+      : handleCreateMessageNode;
+
+    submitFn();
+    handleClose();
+  };
+
+  const handleUpdateMessageNode = useCallback(() => {
+    if (!messageNodeEdit || !messageNodeEdit.data) {
+      console.log('Sem mensagem para editar');
+      return;
+    }
+    onUpdate({
+      ...messageNodeEdit,
+      data: {
+        ...messageNodeEdit.data,
+        ...formData,
+      },
+    });
+
+    setMessageNodeEdit(undefined);
+  }, [formData, messageNodeEdit, onUpdate]);
+
+  const handleCreateMessageNode = useCallback(() => {
     const uniqueId = uuidv4().replaceAll(/[^a-zA-Z0-9]/g, '-');
     onAddNode({
       id: uniqueId,
@@ -79,9 +104,19 @@ const SideMessageControls = forwardRef<
         ...formData,
       },
     });
+  }, [formData, onAddNode]);
+
+  const handleClose = useCallback(() => {
+    setMessageNodeEdit(undefined);
     setFormData(INITIAL_FORM_DATA);
     onClose();
-  };
+  }, [onClose]);
+
+  const handleDelete = useCallback(() => {
+    if (!messageNodeEdit) return;
+    onDelete(messageNodeEdit.id);
+    handleClose();
+  }, [handleClose, messageNodeEdit, onDelete]);
 
   const handleInputChange = useCallback<
     React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>
@@ -114,7 +149,7 @@ const SideMessageControls = forwardRef<
           </DrawerHeader>
 
           <DrawerBody>
-            <form id="form-node" onSubmit={handleAddNode}>
+            <form id="form-node" onSubmit={handleSaveMessageNode}>
               <Stack spacing="24px">
                 <FormControl id="title" isRequired>
                   <FormLabel htmlFor="title">Título</FormLabel>
@@ -155,12 +190,12 @@ const SideMessageControls = forwardRef<
 
           <DrawerFooter borderTopWidth="1px">
             {renderIf(
-              <Button colorScheme="red" mr="auto" onClick={onClose}>
+              <Button colorScheme="red" mr="auto" onClick={handleDelete}>
                 Deletar
               </Button>,
               !!messageNodeEdit
             )}
-            <Button variant="outline" mr={3} onClick={onClose}>
+            <Button variant="outline" mr={3} onClick={handleClose}>
               Cancelar
             </Button>
             <Button colorScheme="blue" type="submit" form="form-node">

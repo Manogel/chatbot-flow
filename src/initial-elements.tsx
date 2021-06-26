@@ -1,4 +1,4 @@
-import { Edge, FlowElement } from 'react-flow-renderer';
+import { Edge, Node } from 'react-flow-renderer';
 
 export enum INodeType {
   NODE = 'node',
@@ -25,7 +25,7 @@ export type IConnection = IEdge & {
   target: string;
 };
 
-export type MyMessageNode = FlowElement<INode>;
+export type MyMessageNode = Node<INode>;
 export type MyConnectionNode = Edge<IConnection>;
 
 export const defaultNodeStyles = {

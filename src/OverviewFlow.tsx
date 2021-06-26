@@ -7,9 +7,9 @@ import ReactFlow, {
   OnLoadFunc,
   Connection,
   Edge,
-  FlowElement,
   ArrowHeadType,
 } from 'react-flow-renderer';
+import { useDebouncedCallback } from 'use-debounce';
 import ConnectionButton from './components/ConnectionButton';
 import { ConnectionEdgeSideControlsRef } from './components/ConnectionEdgeSideControls/types';
 import ConnectionLine from './components/ConnectionLine';
@@ -19,7 +19,6 @@ import ConnectionEdgeSideControls from './components/ConnectionEdgeSideControls'
 import { SideMessageControlsRef } from './components/SideMessageControls/types';
 
 import initialElements, {
-  INode,
   INodeType,
   MyConnectionNode,
   MyMessageNode,
@@ -47,7 +46,7 @@ const OverviewFlow = () => {
     useState<MyMessageNode[]>(initialElements);
 
   const onConnect = (data: Edge | Connection) => {
-    const params = data as Edge;
+    const params = data as MyConnectionNode;
     params.arrowHeadType = ArrowHeadType.ArrowClosed;
     const id = `connection-${params.target}-${params.source}`;
     const connectionData = {
@@ -79,7 +78,7 @@ const OverviewFlow = () => {
     [sideMessageSideRef]
   );
 
-  const handleAddNode = useCallback((node: FlowElement<INode>) => {
+  const handleAddNode = useCallback((node: MyMessageNode) => {
     setMessageNodes((prevState) => [...prevState, node]);
   }, []);
 
@@ -96,6 +95,37 @@ const OverviewFlow = () => {
       prevState.filter((nodeItem) => nodeItem.id !== connectionId)
     );
   }, []);
+
+  const handleUpdateMessage = useCallback((message: MyMessageNode) => {
+    setMessageNodes((prevState) =>
+      prevState.map((nodeItem) =>
+        nodeItem.id !== message.id ? nodeItem : message
+      )
+    );
+  }, []);
+
+  const handleDeleteMessage = useCallback((messageId: string) => {
+    setMessageNodes((prevState) =>
+      prevState.filter((nodeItem) => nodeItem.id !== messageId)
+    );
+    setConnectionNodes((prevState) =>
+      prevState.filter(
+        (nodeItem) =>
+          nodeItem.target !== messageId && nodeItem.source !== messageId
+      )
+    );
+  }, []);
+
+  const handleMessageBoxMove = useDebouncedCallback((value: MyMessageNode) => {
+    const { id, position } = value;
+
+    setMessageNodes((prevSate) =>
+      prevSate.map((nodeItem) => ({
+        ...nodeItem,
+        position: nodeItem.id === id ? position : nodeItem.position,
+      }))
+    );
+  }, 1500);
 
   const elements = useMemo(
     () => [...connectionNodes, ...messageNodes],
@@ -118,10 +148,16 @@ const OverviewFlow = () => {
       snapToGrid={true}
       snapGrid={[15, 15]}
       connectionLineComponent={ConnectionLine}
+      onNodeMouseMove={(_e, node) => handleMessageBoxMove(node)}
     >
       <Controls />
       <Background color="#aaa" gap={16} />
-      <SideMessageControls ref={sideMessageSideRef} onAddNode={handleAddNode} />
+      <SideMessageControls
+        ref={sideMessageSideRef}
+        onAddNode={handleAddNode}
+        onUpdate={handleUpdateMessage}
+        onDelete={handleDeleteMessage}
+      />
       <ConnectionEdgeSideControls
         onUpdate={handleUpdateConnection}
         onDelete={handleDeleteConnection}
