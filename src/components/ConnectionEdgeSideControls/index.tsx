@@ -23,12 +23,12 @@ import {
   Button,
   FormControl,
 } from '@chakra-ui/react';
-import { MyConnectionNode } from '../../initial-elements';
 import {
   ConnectionEdgeSideControlsProps,
   ConnectionEdgeSideControlsRef,
   ISelectOptions,
 } from './types';
+import { MyConnectionNode } from '../../types';
 
 const INITIAL_FORM_DATA = {
   mustBeEqualTo: '',
@@ -92,12 +92,17 @@ const ConnectionEdgeSideControls = forwardRef<
     e.preventDefault();
 
     if (!connectionElement.data) return;
+    const messageIfAnswerIsInvalidId =
+      formData.messageIfAnswerIsInvalidId !== 'custom'
+        ? formData.messageIfAnswerIsInvalidId || ''
+        : undefined;
 
     onUpdate({
       ...connectionElement,
       data: {
         ...connectionElement.data,
         ...formData,
+        messageIfAnswerIsInvalidId,
       },
     });
 
@@ -126,7 +131,13 @@ const ConnectionEdgeSideControls = forwardRef<
   );
 
   return (
-    <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="md">
+    <Drawer
+      isOpen={isOpen}
+      placement="right"
+      onClose={onClose}
+      size="md"
+      closeOnOverlayClick={false}
+    >
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />

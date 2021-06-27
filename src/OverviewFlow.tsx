@@ -18,11 +18,8 @@ import SideMessageControls from './components/SideMessageControls';
 import ConnectionEdgeSideControls from './components/ConnectionEdgeSideControls';
 import { SideMessageControlsRef } from './components/SideMessageControls/types';
 
-import initialElements, {
-  INodeType,
-  MyConnectionNode,
-  MyMessageNode,
-} from './initial-elements';
+import { INodeType, MyConnectionNode, MyMessageNode } from './types';
+import ChatbotFlowService from './service/ChatbotFlowService';
 
 const nodeTypes = {
   boxText: MessageNodeBox,
@@ -42,8 +39,27 @@ const OverviewFlow = () => {
   const [connectionNodes, setConnectionNodes] = useState<MyConnectionNode[]>(
     []
   );
-  const [messageNodes, setMessageNodes] =
-    useState<MyMessageNode[]>(initialElements);
+  const [messageNodes, setMessageNodes] = useState<MyMessageNode[]>([]);
+
+  useEffect(() => {
+    const fetchElements = async () => {
+      const elementsData = await ChatbotFlowService.findAll();
+      const connections: MyConnectionNode[] = [];
+      const nodes: MyMessageNode[] = [];
+
+      elementsData.forEach((elementItem) => {
+        if (elementItem.extendsData.type === INodeType.NODE) {
+          nodes.push(elementItem.extendsData as MyMessageNode);
+        } else {
+          connections.push(elementItem.extendsData as MyConnectionNode);
+        }
+      });
+
+      setConnectionNodes(connections);
+      setMessageNodes(nodes);
+    };
+    fetchElements();
+  }, []);
 
   const onConnect = (data: Edge | Connection) => {
     const params = data as MyConnectionNode;
@@ -58,7 +74,7 @@ const OverviewFlow = () => {
         type: INodeType.CONNECTION,
       },
     } as MyConnectionNode;
-
+    console.log(connectionData);
     connectionEdgeSideRef.current?.openToEdit(connectionData);
     setConnectionNodes(
       (els) => addEdge(connectionData, els) as MyConnectionNode[]
@@ -78,33 +94,70 @@ const OverviewFlow = () => {
     [sideMessageSideRef]
   );
 
-  const handleAddNode = useCallback((node: MyMessageNode) => {
+  const handleAddNode = useCallback(async (node: MyMessageNode) => {
+    await ChatbotFlowService.createMessageNode({
+      extendsData: node,
+      id: node.id,
+      isEntryFlow: !!node.data?.isEntryFlow,
+      isFinalFlow: !!node.data?.isFinalFlow,
+      message: node.data?.message || '',
+      title: node.data?.title || '',
+    });
+
     setMessageNodes((prevState) => [...prevState, node]);
   }, []);
 
-  const handleUpdateConnection = useCallback((connection: MyConnectionNode) => {
-    setConnectionNodes((prevState) =>
-      prevState.map((nodeItem) =>
-        nodeItem.id !== connection.id ? nodeItem : connection
-      )
-    );
-  }, []);
+  const handleUpdateConnection = useCallback(
+    async (connection: MyConnectionNode) => {
+      const response = await ChatbotFlowService.createOrUpdateConnectionNode({
+        extendsData: connection,
+        id: connection.id,
+        mustBeEqualTo: connection.data?.mustBeEqualTo || '',
+        customMessageIfAnswerIsInvalid:
+          connection.data?.customMessageIfAnswerIsInvalid,
+        messageIfAnswerIsInvalidId: connection.data?.messageIfAnswerIsInvalidId,
+        source: connection.source,
+        target: connection.target,
+      });
+      console.log(response);
 
-  const handleDeleteConnection = useCallback((connectionId: string) => {
+      setConnectionNodes((prevState) => {
+        const newList = prevState.map((nodeItem) => ({
+          ...nodeItem,
+          data: nodeItem.id !== connection.id ? nodeItem.data : connection.data,
+        }));
+
+        return newList;
+      });
+    },
+    []
+  );
+
+  const handleDeleteConnection = useCallback(async (connectionId: string) => {
     setConnectionNodes((prevState) =>
       prevState.filter((nodeItem) => nodeItem.id !== connectionId)
     );
   }, []);
 
-  const handleUpdateMessage = useCallback((message: MyMessageNode) => {
+  const handleUpdateMessage = useCallback(async (message: MyMessageNode) => {
+    await ChatbotFlowService.updateMessageNode({
+      extendsData: message,
+      id: message.id,
+      isEntryFlow: !!message.data?.isEntryFlow,
+      isFinalFlow: !!message.data?.isFinalFlow,
+      message: message.data?.message || '',
+      title: message.data?.title || '',
+    });
+
     setMessageNodes((prevState) =>
-      prevState.map((nodeItem) =>
-        nodeItem.id !== message.id ? nodeItem : message
-      )
+      prevState.map((nodeItem) => ({
+        ...nodeItem,
+        data: nodeItem.id !== message.id ? nodeItem.data : message.data,
+      }))
     );
   }, []);
 
-  const handleDeleteMessage = useCallback((messageId: string) => {
+  const handleDeleteMessage = useCallback(async (messageId: string) => {
     setMessageNodes((prevState) =>
       prevState.filter((nodeItem) => nodeItem.id !== messageId)
     );
@@ -119,12 +172,13 @@ const OverviewFlow = () => {
   const handleMessageBoxMove = useDebouncedCallback((value: MyMessageNode) => {
     const { id, position } = value;
 
-    setMessageNodes((prevSate) =>
-      prevSate.map((nodeItem) => ({
+    setMessageNodes((prevSate) => {
+      const newList = prevSate.map((nodeItem) => ({
         ...nodeItem,
-        position: nodeItem.id === id ? position : nodeItem.position,
-      }))
-    );
+        position: nodeItem.id === String(id) ? position : nodeItem.position,
+      }));
+      return newList;
+    });
   }, 1500);
 
   const elements = useMemo(

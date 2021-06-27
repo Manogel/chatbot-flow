@@ -18,15 +18,12 @@ import {
 import { useCallback, useImperativeHandle, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { AddIcon } from '@chakra-ui/icons';
-import {
-  defaultNodeStyles,
-  INodeType,
-  MyMessageNode,
-} from '../../initial-elements';
+import { defaultNodeStyles } from '../../initial-elements';
 import { FormEventHandler } from 'react';
 import { forwardRef } from 'react';
 import renderIf from '../../utils/renderIf';
 import { SideMessageControlsProps, SideMessageControlsRef } from './types';
+import { INodeType, MyMessageNode } from '../../types';
 
 const INITIAL_FORM_DATA = {
   title: '',
@@ -82,6 +79,7 @@ const SideMessageControls = forwardRef<
     }
     onUpdate({
       ...messageNodeEdit,
+      style: defaultNodeStyles,
       data: {
         ...messageNodeEdit.data,
         ...formData,
@@ -92,7 +90,7 @@ const SideMessageControls = forwardRef<
   }, [formData, messageNodeEdit, onUpdate]);
 
   const handleCreateMessageNode = useCallback(() => {
-    const uniqueId = uuidv4().replaceAll(/[^a-zA-Z0-9]/g, '-');
+    const uniqueId = uuidv4().replaceAll(/[^a-zA-Z0-9]/g, '');
     onAddNode({
       id: uniqueId,
       type: 'boxText',
@@ -140,7 +138,13 @@ const SideMessageControls = forwardRef<
       >
         {messageNodeEdit ? 'Editar' : 'Adicionar nova'} mensagem
       </Button>
-      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="md">
+      <Drawer
+        isOpen={isOpen}
+        placement="right"
+        onClose={onClose}
+        size="md"
+        closeOnOverlayClick={false}
+      >
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />

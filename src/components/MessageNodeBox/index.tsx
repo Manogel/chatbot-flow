@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import { Stack, Container, Text } from '@chakra-ui/react';
 import { Handle, Position } from 'react-flow-renderer';
-import { MyMessageNode } from '../../initial-elements';
 import renderIf from '../../utils/renderIf';
+import { MyMessageNode } from '../../types';
 
 const defaultDotSizeStyle = {
   width: '10px',

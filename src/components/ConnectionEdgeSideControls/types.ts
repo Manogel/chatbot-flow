@@ -1,4 +1,4 @@
-import { MyConnectionNode, MyMessageNode } from '../../initial-elements';
+import { MyConnectionNode, MyMessageNode } from '../../types';
 
 export type ISelectOptions = {
   id: string;
@@ -8,8 +8,8 @@ export type ISelectOptions = {
 
 export type ConnectionEdgeSideControlsProps = {
   messageNodes: MyMessageNode[];
-  onDelete: (connectionId: string) => void;
-  onUpdate: (connection: MyConnectionNode) => void;
+  onDelete: (connectionId: string) => Promise<void>;
+  onUpdate: (connection: MyConnectionNode) => Promise<void>;
 };
 export type ConnectionEdgeSideControlsRef = {
   openToEdit(data: MyConnectionNode): void;
